@@ -8,5 +8,7 @@ Gem::Specification.new do |s|
   s.email       = 'banhill@gmail.com'
   s.files       = ["lib/payment_gateway.rb"]
   s.license     = 'MIT'
+  s.add_development_dependency "rspec"
+  s.add_development_dependency "webmock"
+  s.add_development_dependency "sinatra"
 end
-

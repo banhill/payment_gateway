@@ -1,0 +1,27 @@
+defaults: &defaults
+  provider: 'PayPal'
+  store: 'PhantomStore'
+  currency: 'USD'
+  language: 'EN'
+  response_mode: 'XML'
+  use_ssl: true
+  auto_commit_providers: ['MPP2']
+  auto_commit_not_implemented: ['OTPayMP']
+development:
+  <<: *defaults
+  host: 'fake.host'
+  port: 3333
+  header_host: 'test.paymentgateway.hu'
+test:
+  <<: *defaults
+  host: 'fake.host'
+  port: 3333
+  header_host: 'test.paymentgateway.hu'
+staging:
+  <<: *defaults
+#  host: 'test.paymentgateway.hu'
+#  port: 80
+#  header_host: 'test.paymentgateway.hu'
+#  use_ssl: false
+production:
+  <<: *defaults

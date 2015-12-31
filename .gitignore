@@ -1,3 +1,5 @@
 nbproject
 .ruby-version
 .ruby-gemset
+*.swp
+.rspec

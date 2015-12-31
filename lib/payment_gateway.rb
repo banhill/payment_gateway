@@ -4,6 +4,7 @@ require 'open-uri'
 require 'rexml/document'
 require 'cgi'
 require 'logger'
+require 'yaml'
 
 #module Payment
 
@@ -61,14 +62,28 @@ require 'logger'
 
     attr_accessor :provider
 
+    # through hash
     def self.configure(opts = {})
       opts.each { |k,v| @@config[k.to_sym] = v if @@valid_config_keys.include?(k.to_sym) }
+    end
+
+    # through yaml file
+    def self.configure_with(path_to_yaml_file)
+      begin
+        config = YAML::load(IO.read(path_to_yaml_file))
+      rescue Errno::ENOENT
+        log(:warning, "YAML configuration file couldn't be found. Using defaults."); return
+      rescue Psych::SyntaxError
+        log(:warning, "YAML configuration file contains invalid syntax. Using defaults."); return
+      end
+
+      configure(config)
     end
 
     def self.config
       @@config
     end
-    
+
     def initialize(provider = @@config[:provider])
       self.provider = provider
     end
@@ -98,8 +113,8 @@ require 'logger'
       request_path += 'UserId='       + user_id.to_s + '&'
       request_path += 'Currency='     + @@config[:currency] + '&'
       request_path += 'Language='     + @@config[:language] + '&'
-      request_path += 'ResponseMode=' + @@configp[:response_mode] + '&'
-      request_path += 'AutoCommit='   + @@config[:auto_commit_providers].include?(provider).to_s if !@@config[:auto_commit_not_impl].include?(provider)
+      request_path += 'ResponseMode=' + @@config[:response_mode] + '&'
+      request_path += 'AutoCommit='   + @@config[:auto_commit_providers].include?(provider).to_s if !@@config[:auto_commit_not_implemented].include?(provider)
       request = Net::HTTP::Get.new(request_path)
       request.add_field "Host", @@config[:header_host]
 
