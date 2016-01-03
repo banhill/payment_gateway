@@ -163,32 +163,30 @@ require 'rest-client'
     def result(transaction_id, logger = DefaultLogger.new)
       logger.log(nil, transaction_id, nil, nil)
 
-      http = Net::HTTP.new(@@config[:host], @@config[:port])
-      http.use_ssl = @@config[:use_ssl]
-      request_path = '/Result?'
-      request_path += 'TransactionId=' + transaction_id.to_s
-      request = Net::HTTP::Get.new(request_path)
-      request.add_field "Host", @@config[:header_host]
-
-      logger.log(nil, nil, request_path, nil)
-
-      response = http.start {|h| h.request(request) }
-
-      logger.log(nil, nil, nil, response)
-
-      doc = REXML::Document.new(response.body)
-
-      result = {
-        'ResultCode' => REXML::XPath.first(doc, "//ResultCode").text,
-        'ResultMessage' => REXML::XPath.first(doc, "//ResultMessage").text
+      resource_url = @@config[:host]
+      result_hash = {
+        'TransactionId' => transaction_id.to_s
       }
-      result['TransactionId']         = REXML::XPath.first(doc, "//TransactionId") ? REXML::XPath.first(doc, "//TransactionId").text : ''
-      result['Anum']                  = REXML::XPath.first(doc, "//Anum") ? REXML::XPath.first(doc, "//Anum").text : ''
-      result['OrderId']               = REXML::XPath.first(doc, "//OrderId") ? REXML::XPath.first(doc, "//OrderId").text : ''
-      result['UserId']                = REXML::XPath.first(doc, "//UserId") ? REXML::XPath.first(doc, "//UserId").text : ''
-      result['ProviderTransactionId'] = REXML::XPath.first(doc, "//ProviderTransactionId") ? REXML::XPath.first(doc, "//ProviderTransactionId").text : ''
-      result['AutoCommit']            = REXML::XPath.first(doc, "//AutoCommit") ? REXML::XPath.first(doc, "//AutoCommit").text : ''
-      result['CommitState']           = REXML::XPath.first(doc, "//CommitState") ? REXML::XPath.first(doc, "//CommitState").text : ''
+
+      logger.log(nil, nil, result_hash.to_s, nil)
+
+      response = JSON.load(RestClient.post 'https://paymentgateway.hu/api/rest', {:method => 'Result', :json => result_hash.to_json})
+
+      logger.log(nil, nil, nil, response.to_s)
+
+      response_hash = response.to_hash
+      result = {
+        'ResultCode' => response_hash['ResultCode'],
+        'ResultMessage' => response_hash['ResultMessage']
+      }
+
+      result['TransactionId']         = response_hash['TransactionId'] ? response_hash['TransactionId'] : ''
+      result['Anum']                  = response_hash['Anum'] ? response_hash['Anum'] : ''
+      result['OrderId']               = response_hash['OrderId'] ? response_hash['OrderId'] : ''
+      result['UserId']                = response_hash['UserId'] ? response_hash['UserId'] : ''
+      result['ProviderTransactionId'] = response_hash['ProviderTransactionId'] ? response_hash['ProviderTransactionId'] : ''
+      result['AutoCommit']            = response_hash['AutoCommit'] ? response_hash['AutoCommit'] : ''
+      result['CommitState']           = response_hash['CommitState'] ? response_hash['CommitState'] : ''
 
       logger.log(result['OrderId'], nil, nil, nil)
 

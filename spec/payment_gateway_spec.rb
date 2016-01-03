@@ -100,7 +100,38 @@ describe PaymentGateway do
   end
 
   describe "#result" do
-    pending
+    it "queries the state of the transaction, gets pending response" do
+      conf_hash = {
+        :provider => 'PayPal',
+        :store => 'PhantomStore',
+        :currency => 'USD',
+        :language => 'EN',
+        :response_mode => 'XML',
+        :host => 'paymentgateway.hu',
+        :header_host => 'paymentgateway.hu',
+        :port => '3333',
+        :use_ssl => 'true',
+        :auto_commit_providers => ['MPP2'],
+        :auto_commit_not_implemented => ['OTPayMP'],
+        :app_host => 'localhost'
+      }
+
+      expected_result_hash = {
+        "TransactionId" => "6ef7bc3755ac699c3d56db49711f6d1f",
+        "ResultCode" => "PENDING",
+        "ResultMessage" => "M\u00e9g nincs eredm\u00e9ny",
+        "Anum" => '',
+        "OrderId" => "order123",
+        "UserId" => "user123",
+        "ProviderTransactionId" => "6281422198151381",
+        "AutoCommit" => "true",
+        "CommitState" => "APPROVED"
+      }
+      PaymentGateway.configure(conf_hash)
+      success, result_hash = PaymentGateway.new.result('6ef7bc3755ac699c3d56db49711f6d1f')
+      expect(success).to be(false)
+      expect(result_hash).to eq(expected_result_hash)
+    end
   end
 
   describe "#close" do
