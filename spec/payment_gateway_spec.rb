@@ -66,6 +66,15 @@ describe PaymentGateway do
     end
   end
 
+  describe "#sintra_test" do
+    it "makes sure the sinatra app is up and running" do
+      uri = URI('https://paymentgateway.hu/valami')
+
+      response = JSON.load(Net::HTTP.get(uri))
+      expect(response['TransactionId']).to eq '6ef7bc3755ac699c3d56db49711f6d1f'
+    end
+  end
+
   describe "#init" do
     it "initializes the payment interface, gets a transaction id" do
       conf_hash = {
@@ -85,8 +94,8 @@ describe PaymentGateway do
       PaymentGateway.configure(conf_hash)
       success, tr_id, result_hash = PaymentGateway.new.init('deals/755-valami/product/1/verify_payment', 3000, '1234abc', '123ab')
       expect(success).to be(true)
-      expect(tr_id).to eq('123456789')
-      expect(result_hash).to eq({})
+      expect(tr_id).to eq('6ef7bc3755ac699c3d56db49711f6d1f')
+      expect(result_hash).to eq({"ResultCode"=>"SUCCESSFUL", "ResultMessage"=>nil, "TransactionId"=>"6ef7bc3755ac699c3d56db49711f6d1f"})
     end
   end
 

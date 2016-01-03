@@ -5,6 +5,7 @@ require 'rexml/document'
 require 'cgi'
 require 'logger'
 require 'yaml'
+require 'rest-client'
 
 #module Payment
 
@@ -25,7 +26,7 @@ require 'yaml'
       puts self.inspect
     end
 
-    def inspect
+    def inspect_old
       res = " Payment_method #{self.payment_method}"
       res += ' OrderId: ' + self.order_id.to_s if self.order_id
       res += ' OrderId: ' unless self.order_id
@@ -102,36 +103,44 @@ require 'yaml'
     def init(response_url, amount, order_id, user_id, logger = DefaultLogger.new)
       logger.log(order_id, nil, nil, nil)
 
-      http = Net::HTTP.new(@@config[:host], @@config[:port])
-      http.use_ssl = @@config[:use_ssl]
-      request_path = '/Init?'
-      request_path += 'ProviderName=' + provider + '&'
-      request_path += 'StoreName='    + @@config[:store] + '&'
-      request_path += 'ResponseUrl='  + CGI::escape(@@config[:app_host] + response_url) + '&'
-      request_path += 'Amount='       + amount.to_s + '&'
-      request_path += 'OrderId='      + order_id.to_s + '&'
-      request_path += 'UserId='       + user_id.to_s + '&'
-      request_path += 'Currency='     + @@config[:currency] + '&'
-      request_path += 'Language='     + @@config[:language] + '&'
-      request_path += 'ResponseMode=' + @@config[:response_mode] + '&'
-      request_path += 'AutoCommit='   + @@config[:auto_commit_providers].include?(provider).to_s if !@@config[:auto_commit_not_implemented].include?(provider)
-      request = Net::HTTP::Get.new(request_path)
-      request.add_field "Host", @@config[:header_host]
-
-      logger.log(nil, nil, request_path, nil)
-
-      response = http.start {|h| h.request(request) }
-
-      logger.log(nil, nil, nil, response)
-
-      doc = REXML::Document.new(response.body)
-
-      result = {
-        'ResultCode' => REXML::XPath.first(doc, "//ResultCode").text,
-        'ResultMessage' => REXML::XPath.first(doc, "//ResultMessage").text
+      resource_url = @@config[:host]
+      init_hash = {
+        'ProviderName' => provider,
+        'StoreName'    => @@config[:store],
+        'ResponseUrl'  => CGI::escape(@@config[:app_host] + response_url),
+        'Amount'       => amount.to_s,
+        'OrderId'      => order_id.to_s,
+        'UserId'       => user_id.to_s,
+        'Currency'     => @@config[:currency],
+        'Language'     => @@config[:language],
+        'ResponseMode' => @@config[:response_mode],
+        'AutoCommit'   => (@@config[:auto_commit_providers].include?(provider).to_s if !@@config[:auto_commit_not_implemented].include?(provider))
       }
 
-      result['TransactionId'] = REXML::XPath.first(doc, "//TransactionId") ? REXML::XPath.first(doc, "//TransactionId").text : ''
+      logger.log(nil, nil, init_hash.to_json, nil)
+
+      # this works
+      #uri = URI('https://paymentgateway.hu/valami')
+      #response = JSON.load(Net::HTTP.get(uri))
+
+      # now, let's see if it works with the rest_client gem
+      # this works!
+      #response = JSON.load(RestClient.get 'https://paymentgateway.hu/valami')
+
+      # let's go to check if I can make it work with POST
+      # this works!
+      #response = JSON.load(RestClient.post 'https://paymentgateway.hu/valami', nil)
+
+      # let's actually post something, see if I can read it in the sinatra app
+      response = JSON.load(RestClient.post 'https://paymentgateway.hu/api/rest', {:method => 'Init', :json => init_hash.to_json})
+
+      logger.log(nil, nil, nil, response.to_s)
+
+      result = {
+        'ResultCode' => response.to_hash['ResultCode'],
+        'ResultMessage' => response.to_hash['ResultMessage'],
+        'TransactionId' => response.to_hash.keys.include?('TransactionId') ? response.to_hash['TransactionId'] : ''
+      }
 
       success = result['ResultCode'].to_s == 'SUCCESSFUL' ? true : false
       tr_id = result['TransactionId'].to_s if result['TransactionId'].to_s.size == 32
