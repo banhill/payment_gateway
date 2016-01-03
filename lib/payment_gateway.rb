@@ -119,19 +119,6 @@ require 'rest-client'
 
       logger.log(nil, nil, init_hash.to_json, nil)
 
-      # this works
-      #uri = URI('https://paymentgateway.hu/valami')
-      #response = JSON.load(Net::HTTP.get(uri))
-
-      # now, let's see if it works with the rest_client gem
-      # this works!
-      #response = JSON.load(RestClient.get 'https://paymentgateway.hu/valami')
-
-      # let's go to check if I can make it work with POST
-      # this works!
-      #response = JSON.load(RestClient.post 'https://paymentgateway.hu/valami', nil)
-
-      # let's actually post something, see if I can read it in the sinatra app
       response = JSON.load(RestClient.post 'https://paymentgateway.hu/api/rest', {:method => 'Init', :json => init_hash.to_json})
 
       logger.log(nil, nil, nil, response.to_s)
