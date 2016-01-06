@@ -59,14 +59,17 @@ describe PaymentGateway do
     end
   end
 
-  describe "#start_payment" do
+  describe "#start" do
     it "produces the correct url to redirect the user to" do
       PaymentGateway.configure({:header_host => 'my.fake.host'})
-      expect(PaymentGateway.new.start_payment('order_id_123', 'tr_id_123')).to eq('http://my.fake.host/Start?TransactionId=tr_id_123')
+      pg = PaymentGateway.new
+      pg.transaction_id = 'tr_id_123'
+      #pg.order_id = 'order_id_123'
+      expect(pg.start).to eq('http://my.fake.host/Start?TransactionId=tr_id_123')
     end
   end
 
-  describe "#sintra_test" do
+  describe "#sinatra_test" do
     it "makes sure the sinatra app is up and running" do
       uri = URI('https://paymentgateway.hu/valami')
 
@@ -92,10 +95,15 @@ describe PaymentGateway do
         :app_host => 'localhost'
       }
       PaymentGateway.configure(conf_hash)
-      success, tr_id, result_hash = PaymentGateway.new.init('deals/755-valami/product/1/verify_payment', 3000, '1234abc', '123ab')
-      expect(success).to be(true)
-      expect(tr_id).to eq('6ef7bc3755ac699c3d56db49711f6d1f')
-      expect(result_hash).to eq({"ResultCode"=>"SUCCESSFUL", "ResultMessage"=>nil, "TransactionId"=>"6ef7bc3755ac699c3d56db49711f6d1f"})
+      pg = PaymentGateway.new
+      pg.response_url = "payment/gateway/response/url"
+	    pg.amount = 3000
+	    pg.currency = "HUF"
+	    pg.order_id = "order123"
+	    pg.user_id = "user123"
+	    pg.language = "HU"
+      response = pg.init
+      expect(response).to eq({"ResultCode"=>"SUCCESSFUL", "ResultMessage"=>nil, "TransactionId"=>"6ef7bc3755ac699c3d56db49711f6d1f"})
     end
   end
 
@@ -128,9 +136,10 @@ describe PaymentGateway do
         "CommitState" => "APPROVED"
       }
       PaymentGateway.configure(conf_hash)
-      success, result_hash = PaymentGateway.new.result('6ef7bc3755ac699c3d56db49711f6d1f')
-      expect(success).to be(false)
-      expect(result_hash).to eq(expected_result_hash)
+      pg = PaymentGateway.new
+      pg.transaction_id = '6ef7bc3755ac699c3d56db49711f6d1f'
+      response = PaymentGateway.new.result
+      expect(response).to eq(expected_result_hash)
     end
   end
 
@@ -158,9 +167,11 @@ describe PaymentGateway do
       }
 
       PaymentGateway.configure(conf_hash)
-      success, result_hash = PaymentGateway.new.close('6ef7bc3755ac699c3d56db49711f6d1f')
-      expect(success).to be(false)
-      expect(result_hash).to eq(expected_result_hash)
+      pg = PaymentGateway.new
+      pg.transaction_id = '6ef7bc3755ac699c3d56db49711f6d1f'
+      pg.approved = 'true'
+      response = pg.close
+      expect(response).to eq(expected_result_hash)
     end
   end
 end
