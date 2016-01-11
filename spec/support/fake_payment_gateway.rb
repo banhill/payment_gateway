@@ -2,7 +2,12 @@
 require 'sinatra/base'
 
 class FakePaymentGateway < Sinatra::Base
-  get '/valami' do
+  before do
+    # only allow requests for PhantomStore with api_key = "some_api_key"
+    halt json_response 200, 'wrong_api_key.json' unless (!request.env['HTTP_AUTHORIZATION'].nil? and request.env['HTTP_AUTHORIZATION'] == "Basic UGhhbnRvbVN0b3JlOnNvbWVfYXBpX2tleQ==")
+  end
+
+  get '/test' do
     json_response 200, 'init.json'
   end
 

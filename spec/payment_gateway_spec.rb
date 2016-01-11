@@ -6,14 +6,14 @@ describe PaymentGateway do
         :store => 'PhantomStore',
         :currency => 'USD',
         :language => 'EN',
-        :response_mode => 'XML',
         :host => 'fake.host',
         :header_host => 'test.paymentgateway.hu',
         :port => '3333',
         :use_ssl => 'true',
         :auto_commit_providers => ['MPP2'],
         :auto_commit_not_implemented => ['OTPayMP'],
-        :app_host => 'localhost'
+        :app_host => 'localhost',
+        :api_key => 'some_api_key'
       }
       PaymentGateway.configure(conf_hash)
       expect(PaymentGateway.config).to eq(conf_hash)
@@ -25,7 +25,6 @@ describe PaymentGateway do
         :store => 'PhantomStore',
         :currency => 'USD',
         :language => 'EN',
-        :response_mode => 'XML',
         :host => 'fake.host',
         :header_host => 'test.paymentgateway.hu',
         :port => '3333',
@@ -33,6 +32,7 @@ describe PaymentGateway do
         :auto_commit_providers => ['MPP2'],
         :auto_commit_not_implemented => ['OTPayMP'],
         :app_host => 'localhost',
+        :api_key => 'some_api_key',
         :foobar => 'illegal'
       }
       PaymentGateway.configure(conf_hash)
@@ -45,14 +45,14 @@ describe PaymentGateway do
         :store => 'PhantomStore',
         :currency => 'USD',
         :language => 'EN',
-        :response_mode => 'XML',
         :host => 'fake.host',
         :header_host => 'test.paymentgateway.hu',
         :port => '3333',
         :use_ssl => 'true',
         :auto_commit_providers => ['MPP2'],
         :auto_commit_not_implemented => ['OTPayMP'],
-        :app_host => 'localhost'
+        :app_host => 'localhost',
+        :api_key => 'some_api_key'
       }
       PaymentGateway.configure_with('spec/valid_test_config.yml')
       expect(PaymentGateway.config).to eq(conf_hash)
@@ -71,10 +71,34 @@ describe PaymentGateway do
 
   describe "#sinatra_test" do
     it "makes sure the sinatra app is up and running" do
-      uri = URI('https://paymentgateway.hu/valami')
+      url = URI.parse("https://paymentgateway.hu/test")
 
-      response = JSON.load(Net::HTTP.get(uri))
-      expect(response['TransactionId']).to eq '6ef7bc3755ac699c3d56db49711f6d1f'
+      header_key = Base64.encode64("PhantomStore:some_api_key")
+
+      req = Net::HTTP::Get.new(url.path)
+      req.add_field("Authorization", "Basic #{header_key}")
+
+      response = Net::HTTP.new(url.host, url.port).start do |http|
+        http.request(req)
+      end
+
+      expect(JSON.load(response.body)['TransactionId']).to eq '6ef7bc3755ac699c3d56db49711f6d1f'
+    end
+
+    it "checks if wrong api key results in wrong api key error" do
+      url = URI.parse("https://paymentgateway.hu/test")
+
+      header_key = Base64.encode64("PhantomStore:some_WRONG_api_key")
+
+      req = Net::HTTP::Get.new(url.path)
+      req.add_field("Authorization", "Basic #{header_key}")
+
+      response = Net::HTTP.new(url.host, url.port).start do |http|
+        http.request(req)
+      end
+
+      expect(JSON.load(response.body)['ResultCode']).to eq 'WrongApikey'
+
     end
   end
 
@@ -85,14 +109,14 @@ describe PaymentGateway do
         :store => 'PhantomStore',
         :currency => 'USD',
         :language => 'EN',
-        :response_mode => 'XML',
         :host => 'paymentgateway.hu',
         :header_host => 'paymentgateway.hu',
         :port => '3333',
         :use_ssl => 'true',
         :auto_commit_providers => ['MPP2'],
         :auto_commit_not_implemented => ['OTPayMP'],
-        :app_host => 'localhost'
+        :app_host => 'localhost',
+        :api_key => 'some_api_key'
       }
       PaymentGateway.configure(conf_hash)
       pg = PaymentGateway.new
@@ -114,7 +138,6 @@ describe PaymentGateway do
         :store => 'PhantomStore',
         :currency => 'USD',
         :language => 'EN',
-        :response_mode => 'XML',
         :host => 'paymentgateway.hu',
         :header_host => 'paymentgateway.hu',
         :port => '3333',
@@ -144,13 +167,12 @@ describe PaymentGateway do
   end
 
   describe "#close" do
-    it "it closes the transaction with approved state" do
+    it "closes the transaction with approved state" do
       conf_hash = {
         :provider => 'PayPal',
         :store => 'PhantomStore',
         :currency => 'USD',
         :language => 'EN',
-        :response_mode => 'XML',
         :host => 'paymentgateway.hu',
         :header_host => 'paymentgateway.hu',
         :port => '3333',

@@ -2,6 +2,7 @@ require 'cgi'
 require 'logger'
 require 'yaml'
 require 'rest-client'
+require 'base64'
 
 #module Payment
 
@@ -41,17 +42,17 @@ require 'rest-client'
 
     @@config = {
       :provider => 'OTP',
-      :store => '',
+      :store => 'sdk_test',
       :currency => 'HUF',
       :language => 'HU',
-      :response_mode => 'XML',
       :host => '',
       :header_host => PROD_HOST,
       :port => '',
       :use_ssl => 'true',
       :auto_commit_providers => ['MPP2'],
       :auto_commit_not_implemented => ['OTPayMP'],
-      :app_host => ''
+      :app_host => '',
+      :api_key => '86af3-80e4f-f8228-9498f-910ad'
     }
 
     @@valid_config_keys = @@config.keys
@@ -118,7 +119,7 @@ require 'rest-client'
       }
 
       result = submit_request(INIT, request_hash)
-      
+
       logger.log(request_hash.to_s, result.to_s)
 
       return result
@@ -209,7 +210,13 @@ require 'rest-client'
     # === Example
     #  submit_request('Result', {'TransactionId' => '123456789abc'})
     def submit_request(method, request_hash)
-      JSON.load(RestClient.post @@config[:header_host] + REST_API, {:method => method, :json => request_hash.to_json}).to_hash
+      header_key = Base64.encode64(@@config[:store] + ':' + @@config[:api_key])
+      response = RestClient.post(
+        @@config[:header_host] + REST_API,
+        {:method => method, :json => request_hash.to_json},
+        :accept => :json,
+        :Authorization => "Basic #{header_key}")
+      JSON.load(response).to_hash
     end
 
   end # class PaymentGateway

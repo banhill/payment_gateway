@@ -7,6 +7,7 @@ defaults: &defaults
   use_ssl: true
   auto_commit_providers: ['MPP2']
   auto_commit_not_implemented: ['OTPayMP']
+  api_key: 'some_api_key'
 development:
   <<: *defaults
   host: 'fake.host'
