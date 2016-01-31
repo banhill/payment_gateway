@@ -1,4 +1,20 @@
 describe PaymentGateway do
+  def default_config
+    conf_hash = {
+      :provider => 'PayPal',
+      :store => 'PhantomStore',
+      :currency => 'USD',
+      :language => 'EN',
+      :host => 'paymentgateway.hu',
+      :header_host => 'paymentgateway.hu',
+      :port => '3333',
+      :use_ssl => 'true',
+      :auto_commit_providers => ['MPP2'],
+      :auto_commit_not_implemented => ['OTPayMP'],
+      :app_host => 'localhost'
+    }
+  end
+
   describe "#configure" do
     it "loads a legal set of config parameters as hash" do
       conf_hash = {
@@ -104,21 +120,7 @@ describe PaymentGateway do
 
   describe "#init" do
     it "initializes the payment interface, gets a transaction id" do
-      conf_hash = {
-        :provider => 'PayPal',
-        :store => 'PhantomStore',
-        :currency => 'USD',
-        :language => 'EN',
-        :host => 'paymentgateway.hu',
-        :header_host => 'paymentgateway.hu',
-        :port => '3333',
-        :use_ssl => 'true',
-        :auto_commit_providers => ['MPP2'],
-        :auto_commit_not_implemented => ['OTPayMP'],
-        :app_host => 'localhost',
-        :api_key => 'some_api_key'
-      }
-      PaymentGateway.configure(conf_hash)
+      PaymentGateway.configure(default_config)
       pg = PaymentGateway.new
       pg.response_url = "payment/gateway/response/url"
 	    pg.amount = 3000
@@ -133,20 +135,6 @@ describe PaymentGateway do
 
   describe "#result" do
     it "queries the state of the transaction, gets pending response" do
-      conf_hash = {
-        :provider => 'PayPal',
-        :store => 'PhantomStore',
-        :currency => 'USD',
-        :language => 'EN',
-        :host => 'paymentgateway.hu',
-        :header_host => 'paymentgateway.hu',
-        :port => '3333',
-        :use_ssl => 'true',
-        :auto_commit_providers => ['MPP2'],
-        :auto_commit_not_implemented => ['OTPayMP'],
-        :app_host => 'localhost'
-      }
-
       expected_result_hash = {
         "TransactionId" => "6ef7bc3755ac699c3d56db49711f6d1f",
         "ResultCode" => "PENDING",
@@ -158,7 +146,7 @@ describe PaymentGateway do
         "AutoCommit" => "true",
         "CommitState" => "APPROVED"
       }
-      PaymentGateway.configure(conf_hash)
+      PaymentGateway.configure(default_config)
       pg = PaymentGateway.new
       pg.transaction_id = '6ef7bc3755ac699c3d56db49711f6d1f'
       response = PaymentGateway.new.result
@@ -168,31 +156,34 @@ describe PaymentGateway do
 
   describe "#close" do
     it "closes the transaction with approved state" do
-      conf_hash = {
-        :provider => 'PayPal',
-        :store => 'PhantomStore',
-        :currency => 'USD',
-        :language => 'EN',
-        :host => 'paymentgateway.hu',
-        :header_host => 'paymentgateway.hu',
-        :port => '3333',
-        :use_ssl => 'true',
-        :auto_commit_providers => ['MPP2'],
-        :auto_commit_not_implemented => ['OTPayMP'],
-        :app_host => 'localhost'
-      }
-
       expected_result_hash = {
         'TransactionId' => '',
         'ResultCode' => 'OtpResponseCodeError',
         'ResultMessage' => "Hib\u00e1s v\u00e1lasz \u00e9rkezett az OTP Bank szerver\u00e9t\u0151l (NINCSILYENFIZETESIFOLYAMAT)"
       }
 
-      PaymentGateway.configure(conf_hash)
+      PaymentGateway.configure(default_config)
       pg = PaymentGateway.new
       pg.transaction_id = '6ef7bc3755ac699c3d56db49711f6d1f'
       pg.approved = 'true'
       response = pg.close
+      expect(response).to eq(expected_result_hash)
+    end
+  end
+
+  describe "#refund" do
+    it "refunds a certain amount of money to the customer" do
+      expected_result_hash = {
+        'TransactionId' => '6ef7bc3755ac699c3d56db49711f6d1f',
+        'ResultCode' => 'SUCCESSFUL',
+        'ResultMessage' => "Hib\u00e1s v\u00e1lasz \u00e9rkezett az OTP Bank szerver\u00e9t\u0151l (NINCSILYENFIZETESIFOLYAMAT)"
+      }
+
+      PaymentGateway.configure(default_config)
+      pg = PaymentGateway.new
+      pg.transaction_id = '6ef7bc3755ac699c3d56db49711f6d1f'
+      pg.amount = 100.0
+      response = pg.refund
       expect(response).to eq(expected_result_hash)
     end
   end

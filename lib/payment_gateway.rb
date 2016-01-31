@@ -37,6 +37,7 @@ require 'base64'
     TEST_HOST = 'test.paymentgateway.hu'
     PROD_HOST = 'paymentgateway.hu'
     INIT   = 'Init'
+    START  = 'Start'
     RESULT = 'Result'
     CLOSE  = 'Close'
 
@@ -120,7 +121,7 @@ require 'base64'
 
       result = submit_request(INIT, request_hash)
 
-      logger.log(request_hash.to_s, result.to_s)
+      logger.log({:method => INIT, :data => request_hash}.inspect, result.inspect)
 
       return result
 
@@ -138,7 +139,7 @@ require 'base64'
     # redirect_to pg.start
     def start(logger = DefaultLogger.new)
       url = 'http://' + @@config[:header_host] + '/Start?TransactionId=' + transaction_id.to_s
-      logger.log(url, nil)
+      logger.log({:method => START, :data => url}, nil)
       return url
     end
 
@@ -159,7 +160,7 @@ require 'base64'
 
       result = submit_request(RESULT, request_hash)
 
-      logger.log(request_hash.to_s, result.to_s)
+      logger.log({:method => RESULT, :data => request_hash}.inspect, result.inspect)
 
       return result
 
@@ -190,7 +191,7 @@ require 'base64'
 
       result = submit_request(CLOSE, request_hash)
 
-      logger.log(request_hash.to_s, result.to_s)
+      logger.log({:method => CLOSE, :data => request_hash}.inspect, result.to_s)
 
       return result
 

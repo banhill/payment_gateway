@@ -22,6 +22,8 @@ class FakePaymentGateway < Sinatra::Base
       json_response 200, 'result.json'
     when 'Close'
       json_response 200, 'close.json'
+    when 'Refund'
+      json_response 200, 'refund.json'
     else
       json_response 500, nil
     end
