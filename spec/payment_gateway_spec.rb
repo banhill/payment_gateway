@@ -1,3 +1,5 @@
+require 'spec_helper'
+
 describe PaymentGateway do
   describe "#configure" do
     it "loads a legal set of config parameters as hash" do

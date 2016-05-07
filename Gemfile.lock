@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     payment_gateway (0.0.0)
-      rest-client
+      rest-client (~> 1.8, >= 1.8.0)
 
 GEM
   remote: https://rubygems.org/
@@ -11,12 +11,12 @@ GEM
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
     diff-lcs (1.2.5)
-    domain_name (0.5.25)
+    domain_name (0.5.20160310)
       unf (>= 0.0.5, < 1.0.0)
     hashdiff (0.2.3)
     http-cookie (1.0.2)
       domain_name (~> 0.5)
-    mime-types (2.99)
+    mime-types (2.99.1)
     netrc (0.11.0)
     rack (1.6.4)
     rack-protection (1.5.3)
@@ -46,7 +46,7 @@ GEM
     tilt (2.0.1)
     unf (0.1.4)
       unf_ext
-    unf_ext (0.0.7.1)
+    unf_ext (0.0.7.2)
     webmock (1.22.3)
       addressable (>= 2.3.6)
       crack (>= 0.3.2)
@@ -57,6 +57,9 @@ PLATFORMS
 
 DEPENDENCIES
   payment_gateway!
-  rspec
-  sinatra
-  webmock
+  rspec (~> 3.4, >= 3.4.0)
+  sinatra (~> 1.4.0, >= 1.4.6)
+  webmock (~> 1.22, >= 1.22.3)
+
+BUNDLED WITH
+   1.11.2
