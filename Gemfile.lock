@@ -49,9 +49,9 @@ PLATFORMS
 DEPENDENCIES
   payment_gateway!
   rake
-  rspec (~> 3.4, >= 3.4.0)
-  sinatra (~> 1.4.0, >= 1.4.6)
-  webmock (~> 1.22, >= 1.22.3)
+  rspec (~> 3.4)
+  sinatra (~> 1.4.0)
+  webmock (~> 1.22)
 
 BUNDLED WITH
    1.11.2
