@@ -1,5 +1,33 @@
 require 'spec_helper'
 
+describe 'Sinatra app' do
+  let(:url) { URI.parse('https://paymentgateway.hu/test') }
+  let(:req) { Net::HTTP::Get.new(url.path) }
+  let(:response) do
+    Net::HTTP.new(url.host, url.port).start do |http|
+      http.request(req)
+    end
+  end
+
+  subject { JSON.load(response.body) }
+
+  it 'is up and running' do
+    header_key = Base64.encode64('PhantomStore:some_api_key')
+
+    req.add_field('Authorization', "Basic #{header_key}")
+
+    expect(subject['TransactionId']).to eq '6ef7bc3755ac699c3d56db49711f6d1f'
+  end
+
+  it 'returns wrong api key error for wrong api key' do
+    header_key = Base64.encode64('PhantomStore:some_WRONG_api_key')
+
+    req.add_field('Authorization', "Basic #{header_key}")
+
+    expect(subject['ResultCode']).to eq 'WrongApikey'
+  end
+end
+
 describe PaymentGateway do
   let(:conf_hash) do
     { provider: 'PayPal',
@@ -18,8 +46,8 @@ describe PaymentGateway do
 
   describe '#configure' do
     it 'loads a legal set of config parameters as hash' do
-      PaymentGateway.configure(conf_hash)
-      expect(PaymentGateway.config).to eq(conf_hash)
+      described_class.configure(conf_hash)
+      expect(described_class.config).to eq(conf_hash)
     end
 
     it 'refuses to load a configuration with illegal attributes' do
@@ -38,55 +66,23 @@ describe PaymentGateway do
         api_key: 'some_api_key',
         foobar: 'illegal'
       }
-      PaymentGateway.configure(conf_hash)
-      expect(PaymentGateway.config).not_to eq(conf_hash)
+      described_class.configure(conf_hash)
+      expect(described_class.config).not_to eq(conf_hash)
     end
 
     it 'loads a legal configuration file' do
-      PaymentGateway.configure_with('spec/valid_test_config.yml')
-      expect(PaymentGateway.config).to eq(conf_hash)
+      described_class.configure_with('spec/valid_test_config.yml')
+      expect(described_class.config).to eq(conf_hash)
     end
   end
 
   describe '#start' do
-    before { PaymentGateway.configure(header_host: 'my.fake.host') }
-    let(:pg) { PaymentGateway.new }
+    before { described_class.configure(header_host: 'my.fake.host') }
+    let(:pg) { described_class.new }
 
     it 'produces the correct url to redirect the user to' do
       pg.transaction_id = 'tr_id_123'
       expect(pg.start).to eq('http://my.fake.host/Start?TransactionId=tr_id_123')
-    end
-  end
-
-  describe '#sinatra_test' do
-    it 'makes sure the sinatra app is up and running' do
-      url = URI.parse('https://paymentgateway.hu/test')
-
-      header_key = Base64.encode64('PhantomStore:some_api_key')
-
-      req = Net::HTTP::Get.new(url.path)
-      req.add_field('Authorization', "Basic #{header_key}")
-
-      response = Net::HTTP.new(url.host, url.port).start do |http|
-        http.request(req)
-      end
-
-      expect(JSON.load(response.body)['TransactionId']).to eq '6ef7bc3755ac699c3d56db49711f6d1f'
-    end
-
-    it 'checks if wrong api key results in wrong api key error' do
-      url = URI.parse('https://paymentgateway.hu/test')
-
-      header_key = Base64.encode64('PhantomStore:some_WRONG_api_key')
-
-      req = Net::HTTP::Get.new(url.path)
-      req.add_field('Authorization', "Basic #{header_key}")
-
-      response = Net::HTTP.new(url.host, url.port).start do |http|
-        http.request(req)
-      end
-
-      expect(JSON.load(response.body)['ResultCode']).to eq 'WrongApikey'
     end
   end
 
